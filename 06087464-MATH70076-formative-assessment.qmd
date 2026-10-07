@@ -86,9 +86,44 @@ The problem requires to derive an inverse cumulative distribution function for t
 
 #### Case $\xi = 0$:
 
-In this case we have that $F_X(x) = q = 1 - \exp\!\left(-\dfrac{x-u}{\sigma}\right)$ so solving for $x$ we get
+In this case we have that $F_X(x) = q = 1 - \exp\!\left(-\dfrac{x-u}{\sigma}\right)$ with $x \geq u$, so solving for $x$ we get
 
 $$F^{-1}_X(q) = u - \sigma \ln(1 - q)$$
+
+#### Case $\xi \neq 0$:
+
+In this case we have that $F_X(x) = 1 - \left(1 + \dfrac{\xi (x-u)}{\sigma}\right)_+^{-1/\xi}$ with $x \geq u$. This case has an expression of the form $x_+ = \max(x,0)$ meaning it can also be divided in two sub cases:
+
+$$
+\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) \gt 0
+$$ {#eq-max-expr-gt-zero} and $$
+\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) \leq 0
+$$ {#eq-max-expr-leq-zero}
+
+Since we have that $x \geq u$ and $\sigma > 0$ we know that if $\xi >0$ then @eq-max-expr-gt-zero holds, so solving for $x$ gives us
+
+$$
+F^{-1}_X(q) = \dfrac{\sigma}{\xi} \left(\dfrac{1}{(1-q)^\xi} - 1 \right) + u
+$$ {#eq-qdist-max-expr-gt-zero}
+
+If $\xi \lt 0$ then we have to find the values of $x$ for which @eq-max-expr-leq-zero holds. By solving the inequality we get that @eq-max-expr-leq-zero holds when $x \geq u + \dfrac{\sigma}{|\xi|}$, which would give us that $F_X(x) = 1$.
+
+Otherwise, @eq-max-expr-gt-zero is true when $u \leq x \lt  u + \dfrac{\sigma}{|\xi|}$ so we are back with the solution @eq-qdist-max-expr-gt-zero.
+
+Now using $F_X(x)$ to get the conditions in terms of $q$ we get that $F_X(u) = 0$ for all cases and $F_X(x) = 1$ when $\xi \neq 0, \, x \geq u + \dfrac{\sigma}{|\xi|}$
+
+Finally we put all cases together and get
+
+$$
+F^{-1}_X(q) = 
+\begin{cases}
+u - \sigma \ln(1 - q), & \xi = 0, \, 0 \leq q \lt 1; 
+\\[1.2em]
+\dfrac{\sigma}{\xi} \left(\dfrac{1}{(1-q)^\xi} - 1 \right) + u, & \xi \neq 0, \, 0 \leq q \lt 1;
+\\[1.2em]
+u + \dfrac{\sigma}{|\xi|}, & \xi \lt 0, \, q = 1;
+\end{cases}
+$$
 
 ### Question 2
 
