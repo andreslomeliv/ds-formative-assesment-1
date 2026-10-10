@@ -82,13 +82,13 @@ Does your answer contain:
 
 ### Answer 1
 
-The problem requires to derive an inverse cumulative distribution function for the Generalized Pareto Distribution. In order to derive one we must first define a new variable $q \in [0,1]$ such that $F_X(x) = q$ and solve for $x$ in terms of $q$, which would give us $F^{-1}_X$. Since @eq-gpd-cdf has tow cases, we must derive $F^{-1}_X$ for each of them, starting with the simpler case when $\xi = 0$.
+The problem requires to derive an inverse cumulative distribution function for the Generalized Pareto Distribution. In order to derive one we must first define a new variable $p \in [0,1]$ such that $F_X(x) = p$ and solve for $x$ in terms of $p$, which would give us $F^{-1}_X$. Since @eq-gpd-cdf has tow cases, we must derive $F^{-1}_X$ for each of them, starting with the simpler case when $\xi = 0$.
 
 #### Case $\xi = 0$:
 
-In this case we have that $F_X(x) = q = 1 - \exp\!\left(-\dfrac{x-u}{\sigma}\right)$ with $x \geq u$, so solving for $x$ we get
+In this case we have that $F_X(x) = p = 1 - \exp\!\left(-\dfrac{x-u}{\sigma}\right)$ with $x \geq u$, so solving for $x$ we get
 
-$$F^{-1}_X(q) = u - \sigma \ln(1 - q)$$
+$$F^{-1}_X(p) = u - \sigma \ln(1 - p)$$
 
 #### Case $\xi \neq 0$:
 
@@ -103,25 +103,21 @@ $$ {#eq-max-expr-leq-zero}
 Since we have that $x \geq u$ and $\sigma > 0$ we know that if $\xi >0$ then @eq-max-expr-gt-zero holds, so solving for $x$ gives us
 
 $$
-F^{-1}_X(q) = \dfrac{\sigma}{\xi} \left(\dfrac{1}{(1-q)^\xi} - 1 \right) + u
+F^{-1}_X(p) = \dfrac{\sigma}{\xi} \left((1-p)^{-\xi} - 1 \right) + u
 $$ {#eq-qdist-max-expr-gt-zero}
 
 If $\xi \lt 0$ then we have to find the values of $x$ for which @eq-max-expr-leq-zero holds. By solving the inequality we get that @eq-max-expr-leq-zero holds when $x \geq u + \dfrac{\sigma}{|\xi|}$, which would give us that $F_X(x) = 1$.
 
 Otherwise, @eq-max-expr-gt-zero is true when $u \leq x \lt  u + \dfrac{\sigma}{|\xi|}$ so we are back with the solution @eq-qdist-max-expr-gt-zero.
 
-Now using $F_X(x)$ to get the conditions in terms of $q$ we get that $F_X(u) = 0$ for all cases and $F_X(x) = 1$ when $\xi \neq 0, \, x \geq u + \dfrac{\sigma}{|\xi|}$
-
-Finally we put all cases together and get
+Now using $F_X(x)$ to get the conditions in terms of $p$ we get that $F_X(u) = 0$ for all cases and $F_X(x) = 1$ when $\xi \lt 0, \, x \geq u + \dfrac{\sigma}{|\xi|}$. Since the quantile function is defined as $F_X^{-1}(p) = \inf\{x : F_X(x) \geq p\}$, the point $p = 1$ doesn't need a separate case: reading $(1-p)^{-\xi}$ there as $+\infty$ for $\xi > 0$ and as $0$ for $\xi < 0$ gives the empty set’s infimum in the first case and $u + \frac{\sigma}{|\xi|}$ in the second. So we get
 
 $$
-F^{-1}_X(q) = 
+F^{-1}_X(p; \sigma, \xi, u) = 
 \begin{cases}
-u - \sigma \ln(1 - q), & \xi = 0, \, 0 \leq q \lt 1; 
+u - \sigma \ln(1 - p), & \xi = 0, \, 0 \leq p \lt 1; 
 \\[1.2em]
-\dfrac{\sigma}{\xi} \left(\dfrac{1}{(1-q)^\xi} - 1 \right) + u, & \xi \neq 0, \, 0 \leq q \lt 1;
-\\[1.2em]
-u + \dfrac{\sigma}{|\xi|}, & \xi \lt 0, \, q = 1;
+u + \dfrac{\sigma}{\xi} \left((1-p)^{-\xi} - 1 \right), & \xi \neq 0, \, 0 \leq p \lt 1;
 \end{cases}
 $$
 
@@ -146,7 +142,65 @@ Does your answer:
 :::
 
 ```{r}
-# YOUR CODE GOES HERE
+#' Quantile function for the Generalized Pareto Distribution
+#'
+#' @param p 
+#' @param sigma 
+#' @param xi 
+#' @param u 
+#' @param lower.tail 
+#' @param log.p 
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+#'   
+qgpd = function(p, sigma, xi, u, lower.tail = TRUE, log.p = FALSE){
+  
+  # handle wrong data types as qnorm
+  if (
+    any(
+      !is.numeric(p),
+      !is.numeric(sigma),
+      !is.numeric(xi),
+      !is.numeric(u),
+    )
+  ) stop("Non-numeric argument to mathematical function")
+  
+  # handle values not allowed
+  ## p
+  #if (p > 1 || p < 0) stop("p must be between 0 and 1")
+    
+  # turn log(p) into p
+  if (log.p) {
+      p = exp(q)
+  }
+  # return upper tail
+  if (!lower.tail) {
+    p = 1 - p
+  }
+  
+  # handle vectors as qnorm
+  max_n = max(length(p), length(sigma), length(xi), length(u))
+  p = rep_len(p, max_n)
+  sigma = rep_len(sigma, max_n)
+  xi = rep_len(xi, max_n)
+  u = rep_len(u, max_n)
+  
+  # define the return vector
+  out <- numeric(n)
+  
+  # case xi = 0
+  mask = xi == 0 # boolean mask
+  out[mask] = u[mask] - sigma[mask] * log(1 - p[mask])
+  
+  # case x != 0
+  mask = xi != 0
+  out[mask] = u[mask] + (sigma[mask] / xi[mask])((1 - p[mask])^(-xi[mask]) - 1)
+  
+  return(out)
+}
 ```
 
 ### Question 3
