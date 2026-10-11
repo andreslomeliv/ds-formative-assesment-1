@@ -1,7 +1,7 @@
 ---
 title: "MATH70076: Data Science - Formative Assessment"
 subtitle: 'MSc in Statistics 2026/27, Imperial College London'
-author: "YOUR CID"
+author: "06087464"
 format:
   html:
     toc: true
@@ -82,7 +82,7 @@ Does your answer contain:
 
 ### Answer 1
 
-The problem requires to derive an inverse cumulative distribution function for the Generalized Pareto Distribution. In order to derive one we must first define a new variable $p \in [0,1]$ such that $F_X(x) = p$ and solve for $x$ in terms of $p$, which would give us $F^{-1}_X$. Since @eq-gpd-cdf has tow cases, we must derive $F^{-1}_X$ for each of them, starting with the simpler case when $\xi = 0$.
+The problem requires to derive an inverse cumulative distribution function for the Generalized Pareto Distribution. In order to obtain one we must first define a new variable $p \in [0,1]$ such that $F_X(x) = p$ and solve for $x$ in terms of $p$, which would give us $F^{-1}_X$. Since @eq-gpd-cdf has tow cases, we must derive $F^{-1}_X$ for each of them, starting with the simpler case when $\xi = 0$.
 
 #### Case $\xi = 0$:
 
@@ -115,9 +115,9 @@ Now using $F_X(x)$ to get the conditions in terms of $p$ we get that $F_X(u) = 0
 $$
 F^{-1}_X(p; \sigma, \xi, u) = 
 \begin{cases}
-u - \sigma \ln(1 - p), & \xi = 0, \, 0 \leq p \lt 1; 
+u - \sigma \ln(1 - p), & \xi = 0, \, 0 \leq p \leq 1; 
 \\[1.2em]
-u + \dfrac{\sigma}{\xi} \left((1-p)^{-\xi} - 1 \right), & \xi \neq 0, \, 0 \leq p \lt 1;
+u + \dfrac{\sigma}{\xi} \left((1-p)^{-\xi} - 1 \right), & \xi \neq 0, \, 0 \leq p \leq 1;
 \end{cases}
 $$
 
@@ -140,6 +140,8 @@ Does your answer:
 - handle any edge-cases in an appropriate way;
 - return the correct quantile values?
 :::
+
+### Answer 2 {#sec-qgpd-function}
 
 ```{r}
 #' Quantile function for the Generalized Pareto Distribution
@@ -204,7 +206,7 @@ qgpd = function(p, sigma = 1, xi = 0, u = 0, lower.tail = TRUE, log.p = FALSE){
   mask = (
     (p > 1 | p < 0) 
     | (sigma < 0)
-  )# boolean mask for values not allowed
+  ) # boolean mask for values not allowed
   if (any(mask, na.rm = TRUE)) {
     out[which(mask)] <- NaN
     warning("NaNs produced")
@@ -226,6 +228,7 @@ qgpd(p, sigma, xi, u)
 ```
 
 ```{r}
+#| error: true
 # incorrect data types test
 qgpd(p = "0.5")
 ```
@@ -259,7 +262,11 @@ Does your solution contain:
 - a few paragraphs describing and justifying your findings and referencing the figure;
 :::
 
-<!-- YOUR ANSWER GOES HERE -->
+### Answer 3
+
+As shown in @fig-qqplots, the datasets for the top-left ($\sigma = 3$, $\xi = -0.4$, $u = -1$), bottom-middle ($\sigma = 6$, $\xi = 0$, $u = 1$), and bottom-right ($\sigma = 6$, $\xi = 0.4$, $u = 1$) panels are clearly inconsistent with their Generalized Pareto Distribution, while the bottom-left panel ($\sigma = 3$, $\xi = -0.2$, $u = -1$) has a single outlier. Although this analysis come from a visual examination of @fig-qqplots and there was no formal hypothesis test conducted, I have a high confidence in these conclusions because the observed points show smooth, systematic curves away from the reference line. For example, the bottom-middle data steadily bends below the line, meaning the actual data has a lighter tail than modeled. Meanwhile, the bottom-right data curves sharply upward, showing that the model underestimates its true tail heaviness. On the other hand, the remaining datasets follow the reference line tightly across all quantiles, confirming they are consistent with their parameters.
+
+To confirm these visual findings objectively, a formal goodness-of-fit test like the Anderson-Darling or Kolmogorov-Smirnov test would be necessary. This is particularly importan for the more ambiguous cases where visual inspection alone is not entirely convincing. For example, a formal test would help determine if the single extreme outlier in the bottom-left panel means the entire distribution model must be rejected, or if it can simply be treated as a valid extreme event.
 
 ### Question 4
 
@@ -284,7 +291,13 @@ Does your answer contain:
 - At least one reference to each visualisation within the main text.
 :::
 
-<!-- YOUR INVESTIGATION GOES HERE -->
+### Answer 4
+
+To evaluate the hydrologist's first proposal that the river flow distribution remains constant over time, we can look at @fig-river-ts which shows the time series of the river flow and @fig-river-annual-dists which shows the annual distribution of river flow. The time series plot shows some seasonal cycles, but it is dominated by a single, massive extreme flood event at the end of 2015 that spikes above 1000 cumecs. No other year matches this intensity. Looking at the annual boxplot, the middle boxes slowly creep upward from 2015 to 2024. Additionally, the maximum peaks and the distribution of extreme outliers change dramatically from one year to the next. Because the overall distribution and the behavior of extreme events are shifting over the decade, the first proposal of a constant distribution over time is invalid.
+
+The second proposal states that flows exceeding 75 cumecs follow a specific Generalized Pareto Distribution with scale parameter $\sigma = 29.7$, shape parameter $\xi = 0.62$ and location parameter $u = 0$. We test this using @fig-river-dists, which shows the observed and theoretical GPD distributions, and @fig-river-qqplot, which shows a Q-Q Plot of the observed river flow excess againts the theoretical values. The data points track the red dashed reference line nicely at first, but then bend completely below it for all higher theoretical values. This means the observed extreme points are much smaller than what the hydrologist's model predicts. This mismatch is confirmed by the histogram in @fig-river-dists, where the red theoretical density curve drops off too quickly at first and then expects a much longer, thicker tail than what was actually recorded in the river. Because the proposed parameters systematically overestimate the severity of the largest floods, the second proposal is also invalid.
+
+Once again this conclusions come only from a visual analysis of the data and to formalize them, a statistical framework would be required. First, the assumption of a constant distribution over time could be verified using a non-parametric trend test alongside a moving-window variance analysis to check for changes in the mean and spread. Second, the validity of the specific GPD model parameters could be rigorously evaluated using a goodness-of-fit test such as the Anderson-Darling or the Kolmogorov-Smirnov tests, which would evaluate if the observed data deviates significantly from the proposed curve. Although these tests would provide a definitive, formal confirmation, the visual analysis presented remains highly revealing and clearly demonstrates that both of the hydrologist's proposals are likely to be invalid.
 
 ::: callout-tip
 ## Set yourself up for success
@@ -312,7 +325,13 @@ Does your response:
 - critically reflection on that engagement?
 :::
 
-*End of Assessment.*
+### Reflective Summary
+
+During the evaluation of the hydrologist's proposals, first I carefully analyzed the two claims: what it would mean for them to be true and thus how would the data look across different visualizations. Since the first proposition involves a time component I initially selected a standard time series line plot. This allow me to see if there's any clear seasonal pattern to the data and if it follows some trend. Once I generated the plot, I discovered a massive extreme event in late 2015 exceeding 1,000 cumecs. To analyze this further I considered using an aggregated function for the time series, such as plotting the mean over time bounded by the mean plus and minus two standard deviations, but instead I chose an annual boxplot to look at the entire distribution's evolution. By adjusting the vertical axes the boxplot it became clear that the median and upper quartiles drifted upward over the decade, proving the distribution was not constant.
+
+Although the annual boxplots were an effective choice for capturing the upward drift in the distributions, plotting the mean over time with standard deviation bands would have also been an interesting visualization and might have been a more effective plot for a general public. For this approach I would have aggregated the data at a monthly level instead of annually and this could have revealed hidden seasonal dynamics, though the boxplots alone were enough evidence to prove the hydrologist's proposal false.
+
+To evaluate the second proposal regarding the distribution of the river flow's excesses I immediately chose to use a Q-Q plot comparing the observed data with theoretical values generated using the `qgpd()` function I constructed in @sec-qgpd-function. This decision was motivated not only by it's utility to evaluate if the data matches the proposed distribution but also because it neatly tied up all the previous exercises in a final section. For the second plot I originally thought about investigating the "independent and identically distributed" (i.i.d.) part of the proposal, so I considered creating an Autocorrelation Function (ACF) plot, but at the end I chose to focus only on the shape of the distribution. This lead me to choose a different visualization comparing the distribution of the observed values with the theoretical GPD using a histogram for the actual data and a line showing the proposed probability density function. With more time, I would have used Maximum Likelihood Estimation to plot the data's true optimal parameters alongside the hydrologist's proposed distribution.
 
 # Code Appendix {#sec-code-appendix}
 
@@ -322,31 +341,96 @@ Does your response:
 #| code-fold: true
 ```
 
-```{r answer_3}
+```{r}
+#| label: fig-qqplots
+#| tbl-cap: "Q-Q plots for the different samples"
+
+library(glue)
 
 gpd_samples = read.csv("gpd_samples.csv")
 gpd_parameters = read.csv("gpd_parameters.csv")
 
+ids_len = nrow(gpd_parameters)
+fig = par(mfcol = c(2, ids_len/2), cex.axis = 0.75, cex.lab = 0.9)
+
+for (i in seq_len(ids_len)) {
+  
+  dist_id = gpd_parameters$id[i]
+  
+  u = gpd_parameters[gpd_parameters$id == dist_id,]$u
+  sigma = gpd_parameters[gpd_parameters$id == dist_id,]$sigma
+  xi = gpd_parameters[gpd_parameters$id == dist_id,]$xi
+  
+  X_obs = gpd_samples[gpd_samples$set_id == dist_id, ]$value
+  X_obs = sort(X_obs)
+  n = length(X_obs)
+  
+  p = seq(0, 1, length.out = n)
+  X_theo = qgpd(p,sigma, xi, u)
+  
+  plot(
+    X_theo, 
+    X_obs,
+    pch=20,
+    main=glue("Q-Q Plot\n(sigma = {sigma}, xi = {xi}, u = {u})"),
+    xlab="Theoretical Values",
+    ylab="Observed Values",
+    bty="l"
+  )
+  abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2) 
+}
 ```
 
 ```{r}
-gpd_samples[gpd_samples$set_id == "a", ]
+df = read.csv("riverflow_2015_2024.csv")
+df$date = as.Date(df$date)
 ```
 
 ```{r}
-gpd_parameters
+#| label: fig-river-ts
+#| tbl-cap: "Time series of the River Flow"
+
+plot(
+  df$date, 
+  df$flow, 
+  type = "l",                          
+  col = "blue",                   
+  xlab = "Date", 
+  ylab = bquote("River Flow (" * m^3 * "/s)"), 
+  main = "River Flow Time Series",
+  bty = "l",
+)    
 ```
 
 ```{r}
-library(glue)
+#| label: fig-river-annual-dists
+#| tbl-cap: "Annual distribution of the River Flow"
 
-u = gpd_parameters[gpd_parameters$id == "a",]$u
-sigma = gpd_parameters[gpd_parameters$id == "a",]$sigma
-xi = gpd_parameters[gpd_parameters$id == "a",]$xi
+df$year <- format(df$date, "%Y")
+boxplot(
+  flow ~ year, 
+  data = df, 
+  las = 1, 
+  bty = "l",
+  xlab = "Year", 
+  ylab = bquote("River Flow (" * m^3 * "/s)"),
+  main = "Annual Distribution of River Flow",
+  ylim = c(0, 150)
+)
+```
 
-X_obs = gpd_samples[gpd_samples$set_id == "a", ]$value
+```{r}
+#| label: fig-river-qqplot
+#| tbl-cap: "Q-Q plot of the excess River Flow"
+
+X_obs = df[df$flow > 75, ]$flow
+X_obs = X_obs - 75 # get only excesses
 X_obs = sort(X_obs)
 n = length(X_obs)
+
+sigma = 29.7
+xi = 0.62
+u = 0
 
 p = seq(0, 1, length.out = n)
 X_theo = qgpd(p,sigma, xi, u)
@@ -355,9 +439,30 @@ plot(
   X_theo, 
   X_obs,
   pch=20,
-  main=glue("Q-Q Plot (sigma = {sigma}, xi = {xi}, u = {u})"),
+  main=glue("River Flow Excess \nQ-Q Plot"),
   xlab="Theoretical Values",
-  ylab="Observed Values"
+  ylab="Observed Values",
+  bty="l"
 )
 abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2) 
+
+```
+
+```{r}
+#| label: fig-river-dists
+#| tbl-cap: "Observed vs theoretical excess distribution "
+
+
+hist(
+  X_obs, 
+  probability = TRUE,
+  breaks = 30,
+  bty = "l",
+  xlab = "Excess River Flow", 
+  ylab = "Density",
+  main = "Observed vs. Theoretical GPD Curve",
+  ylim = c(0, 0.016)
+)
+
+lines(density(X_theo), col='red', lwd=2.5)
 ```
