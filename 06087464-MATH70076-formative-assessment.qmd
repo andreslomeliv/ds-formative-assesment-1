@@ -95,7 +95,7 @@ $$F^{-1}_X(p) = u - \sigma \ln(1 - p)$$
 In this case we have that $F_X(x) = 1 - \left(1 + \dfrac{\xi (x-u)}{\sigma}\right)_+^{-1/\xi}$ with $x \geq u$. This case has an expression of the form $x_+ = \max(x,0)$ meaning it can also be divided in two sub cases:
 
 $$
-\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) \gt 0
+\left(1 + \dfrac{\xi (x-u)}{\sigma}\right) > 0
 $$ {#eq-max-expr-gt-zero} and $$
 \left(1 + \dfrac{\xi (x-u)}{\sigma}\right) \leq 0
 $$ {#eq-max-expr-leq-zero}
@@ -106,11 +106,11 @@ $$
 F^{-1}_X(p) = \dfrac{\sigma}{\xi} \left((1-p)^{-\xi} - 1 \right) + u
 $$ {#eq-qdist-max-expr-gt-zero}
 
-If $\xi \lt 0$ then we have to find the values of $x$ for which @eq-max-expr-leq-zero holds. By solving the inequality we get that @eq-max-expr-leq-zero holds when $x \geq u + \dfrac{\sigma}{|\xi|}$, which would give us that $F_X(x) = 1$.
+If $\xi < 0$ then we have to find the values of $x$ for which @eq-max-expr-leq-zero holds. By solving the inequality we get that @eq-max-expr-leq-zero holds when $x \geq u + \dfrac{\sigma}{|\xi|}$, which would give us that $F_X(x) = 1$.
 
-Otherwise, @eq-max-expr-gt-zero is true when $u \leq x \lt  u + \dfrac{\sigma}{|\xi|}$ so we are back with the solution @eq-qdist-max-expr-gt-zero.
+Otherwise, @eq-max-expr-gt-zero is true when $u \leq x <  u + \dfrac{\sigma}{|\xi|}$ so we are back with the solution @eq-qdist-max-expr-gt-zero.
 
-Now using $F_X(x)$ to get the conditions in terms of $p$ we get that $F_X(u) = 0$ for all cases and $F_X(x) = 1$ when $\xi \lt 0, \, x \geq u + \dfrac{\sigma}{|\xi|}$. Since the quantile function is defined as $F_X^{-1}(p) = \inf\{x : F_X(x) \geq p\}$, the point $p = 1$ doesn't need a separate case: reading $(1-p)^{-\xi}$ there as $+\infty$ for $\xi > 0$ and as $0$ for $\xi < 0$ gives the empty set’s infimum in the first case and $u + \frac{\sigma}{|\xi|}$ in the second. So we get
+Now using $F_X(x)$ to get the conditions in terms of $p$ we get that $F_X(u) = 0$ for all cases and $F_X(x) = 1$ when $\xi < 0, \, x \geq u + \dfrac{\sigma}{|\xi|}$. Since the quantile function is defined as $F_X^{-1}(p) = \inf\{x : F_X(x) \geq p\}$, the point $p = 1$ doesn't need a separate case: reading $(1-p)^{-\xi}$ there as $+\infty$ for $\xi > 0$ and as $0$ for $\xi < 0$ gives the empty set’s infimum in the first case and $u + \frac{\sigma}{|\xi|}$ in the second. So we get
 
 $$
 F^{-1}_X(p; \sigma, \xi, u) = 
@@ -146,15 +146,18 @@ Does your answer:
 ```{r}
 #' Quantile function for the Generalized Pareto Distribution
 #'
-#' Returns the quantiles of the Generalized Pareto Distribution with location parameter 'u',
-#' scale parameter 'sigma', and shape parameter 'xi'. 
+#' Returns the quantiles of the Generalized Pareto Distribution with
+#' location parameter 'u', scale parameter 'sigma', and shape parameter
+#' 'xi'. 
 #'
 #' @param p Vector of probabilities.
 #' @param u Vector of the location parameter.
 #' @param sigma Vector of the scale parameter. 
 #' @param xi Vector of the shape parameter.
-#' @param lower.tail Logical; probabilities are P(X <= x) if `TRUE` and P(X > x) otherwise.
-#' @param log.p Logical; probabilities are given as log(p) if `TRUE` and just p otherwise.
+#' @param lower.tail Logical; probabilities are P(X <= x) if `TRUE` and
+#'   P(X > x) otherwise.
+#' @param log.p Logical; probabilities are given as log(p) if `TRUE` and
+#'   just p otherwise.
 #'
 #' @return Numeric vector of quantiles. Returns `NaN` (with a warning)
 #'   for invalid inputs.
@@ -163,7 +166,7 @@ Does your answer:
 #' qgpd(0.95, sigma = 2)
 #' qgpd(c(0.5, 0.9), u = c(0, 10))
 
-qgpd = function(p, sigma = 1, xi = 0, u = 0, lower.tail = TRUE, log.p = FALSE){
+qgpd = function(p, sigma=1, xi=0, u=0, lower.tail=TRUE, log.p=FALSE){
   
   # handle wrong data types as qnorm
   if (
@@ -200,7 +203,9 @@ qgpd = function(p, sigma = 1, xi = 0, u = 0, lower.tail = TRUE, log.p = FALSE){
   
   # case x != 0
   mask = xi != 0 # boolean mask x != 0
-  out[mask] = u[mask] + (sigma[mask] / xi[mask]) * ((1 - p[mask])^(-xi[mask]) - 1)
+  out[mask] = (
+    u[mask] + (sigma[mask] / xi[mask]) * ((1 - p[mask])^(-xi[mask]) - 1)
+  )
   
   # force NaNs in computable but not allowed cases (as with qnorm and qunif)
   mask = (
@@ -331,19 +336,16 @@ During the evaluation of the hydrologist's proposals, first I carefully analyzed
 
 Although the annual boxplots were an effective choice for capturing the upward drift in the distributions, plotting the mean over time with standard deviation bands would have also been an interesting visualization and might have been a more effective plot for a general public. For this approach I would have aggregated the data at a monthly level instead of annually and this could have revealed hidden seasonal dynamics, though the boxplots alone were enough evidence to prove the hydrologist's proposal false.
 
-To evaluate the second proposal regarding the distribution of the river flow's excesses I immediately chose to use a Q-Q plot comparing the observed data with theoretical values generated using the `qgpd()` function I constructed in @sec-qgpd-function. This decision was motivated not only by it's utility to evaluate if the data matches the proposed distribution but also because it neatly tied up all the previous exercises in a final section. For the second plot I originally thought about investigating the "independent and identically distributed" (i.i.d.) part of the proposal, so I considered creating an Autocorrelation Function (ACF) plot, but at the end I chose to focus only on the shape of the distribution. This lead me to choose a different visualization comparing the distribution of the observed values with the theoretical GPD using a histogram for the actual data and a line showing the proposed probability density function. With more time, I would have used Maximum Likelihood Estimation to plot the data's true optimal parameters alongside the hydrologist's proposed distribution.
+To evaluate the second proposal regarding the distribution of the river flow's excesses I immediately chose to use a Q-Q plot comparing the observed data with theoretical values generated using the `qgpd()` function previously constructed. This decision was motivated not only by it's utility to evaluate if the data matches the proposed distribution but also because it neatly tied up all the previous exercises in a final section. For the second plot I originally thought about investigating the "independent and identically distributed" (i.i.d.) part of the proposal, so I considered creating an Autocorrelation Function (ACF) plot, but at the end I chose to focus only on the shape of the distribution. This lead me to choose a different visualization comparing the distribution of the observed values with the theoretical GPD using a histogram for the actual data and a line showing the proposed probability density function. With more time, I would have used Maximum Likelihood Estimation to plot the data's true optimal parameters alongside the hydrologist's proposed distribution.
 
 # Code Appendix {#sec-code-appendix}
 
-```{r ref.label=knitr::all_labels()}
-#| echo: true
-#| eval: false
-#| code-fold: true
-```
-
 ```{r}
+#| echo: true
 #| label: fig-qqplots
-#| tbl-cap: "Q-Q plots for the different samples"
+#| fig-width: 6.5
+#| fig-height: 5
+#| fig-cap: "Q-Q plots for the different samples"
 
 library(glue)
 
@@ -351,7 +353,10 @@ gpd_samples = read.csv("gpd_samples.csv")
 gpd_parameters = read.csv("gpd_parameters.csv")
 
 ids_len = nrow(gpd_parameters)
-fig = par(mfcol = c(2, ids_len/2), cex.axis = 0.75, cex.lab = 0.9)
+fig = par(
+  mfcol = c(2, ids_len/2), mar = c(4, 4, 3, 1),
+  cex.axis = 0.75, cex.lab = 0.9, cex.main = 0.85
+)
 
 for (i in seq_len(ids_len)) {
   
@@ -372,7 +377,7 @@ for (i in seq_len(ids_len)) {
     X_theo, 
     X_obs,
     pch=20,
-    main=glue("Q-Q Plot\n(sigma = {sigma}, xi = {xi}, u = {u})"),
+    main=glue("sigma = {sigma}, xi = {xi}, u = {u}"),
     xlab="Theoretical Values",
     ylab="Observed Values",
     bty="l"
@@ -382,13 +387,16 @@ for (i in seq_len(ids_len)) {
 ```
 
 ```{r}
+#| echo: true
+#| label: river-data
 df = read.csv("riverflow_2015_2024.csv")
 df$date = as.Date(df$date)
 ```
 
 ```{r}
+#| echo: true
 #| label: fig-river-ts
-#| tbl-cap: "Time series of the River Flow"
+#| fig-cap: "Time series of the River Flow"
 
 plot(
   df$date, 
@@ -403,8 +411,9 @@ plot(
 ```
 
 ```{r}
+#| echo: true
 #| label: fig-river-annual-dists
-#| tbl-cap: "Annual distribution of the River Flow"
+#| fig-cap: "Annual distribution of the River Flow"
 
 df$year <- format(df$date, "%Y")
 boxplot(
@@ -420,8 +429,9 @@ boxplot(
 ```
 
 ```{r}
+#| echo: true
 #| label: fig-river-qqplot
-#| tbl-cap: "Q-Q plot of the excess River Flow"
+#| fig-cap: "Q-Q plot of the excess River Flow"
 
 X_obs = df[df$flow > 75, ]$flow
 X_obs = X_obs - 75 # get only excesses
@@ -449,9 +459,9 @@ abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 ```
 
 ```{r}
+#| echo: true
 #| label: fig-river-dists
-#| tbl-cap: "Observed vs theoretical excess distribution "
-
+#| fig-cap: "Observed vs theoretical excess distribution "
 
 hist(
   X_obs, 
