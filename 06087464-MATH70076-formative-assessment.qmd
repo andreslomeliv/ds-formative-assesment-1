@@ -31,7 +31,7 @@ bibliography: example.bib
 
 ## Background
 
-### Generalised Pareto Distribution
+### Generalized Pareto Distribution
 
 The Generalized Pareto Distribution (GPD) is a flexible family of continuous probability distributions that arises naturally in extreme value theory, particularly for modelling the distribution of excesses over a threshold. It is parametrised by a shape parameter $\xi \in \mathbb{R}$, a scale parameter $\sigma > 0$, and a location parameter $u \in \mathbb{R}$. Its cumulative distribution function (CDF) is given by
 
@@ -125,9 +125,9 @@ $$
 
 *For this question you should display the R code you use to define and document `qgpd()` within the main text of your report.*
 
-(a) Write and document your own function `qgpd()` to calculate quantiles of a given generalised Pareto distribution. Your function should have inputs and behaviour similar to the built-in R functions such as `qnorm()` and `qunif()` and check that inputs are in the correct format.
+(a) Write and document your own function `qgpd()` to calculate quantiles of a given generalized Pareto distribution. Your function should have inputs and behaviour similar to the built-in R functions such as `qnorm()` and `qunif()` and check that inputs are in the correct format.
 
-(b) Suppose a random variable $X$ follows an generalised Pareto distribution with threshold parameter $u=1.5$, scale parameter $\sigma = 2$ and shape parameter $\xi = -0.4$. Use your function to find quantiles $x_p$ for $p = 0.5, 0.75, 0.99$ (i.e. for each $p$ find the value for which $\Pr(X < x_p) = p$).
+(b) Suppose a random variable $X$ follows a Generalized Pareto Distribution with threshold parameter $u=1.5$, scale parameter $\sigma = 2$ and shape parameter $\xi = -0.4$. Use your function to find quantiles $x_p$ for $p = 0.5, 0.75, 0.99$ (i.e. for each $p$ find the value for which $\Pr(X < x_p) = p$).
 
 ::: callout-tip
 ## Set yourself up for success
@@ -144,19 +144,24 @@ Does your answer:
 ```{r}
 #' Quantile function for the Generalized Pareto Distribution
 #'
-#' @param p 
-#' @param sigma 
-#' @param xi 
-#' @param u 
-#' @param lower.tail 
-#' @param log.p 
+#' Returns the quantiles of the Generalized Pareto Distribution with location parameter 'u',
+#' scale parameter 'sigma', and shape parameter 'xi'. 
 #'
-#' @returns
-#' @export
+#' @param p Vector of probabilities.
+#' @param u Vector of the location parameter.
+#' @param sigma Vector of the scale parameter. 
+#' @param xi Vector of the shape parameter.
+#' @param lower.tail Logical; probabilities are P(X <= x) if `TRUE` and P(X > x) otherwise.
+#' @param log.p Logical; probabilities are given as log(p) if `TRUE` and just p otherwise.
+#'
+#' @return Numeric vector of quantiles. Returns `NaN` (with a warning)
+#'   for invalid inputs.
 #'
 #' @examples
-#'   
-qgpd = function(p, sigma, xi, u, lower.tail = TRUE, log.p = FALSE){
+#' qgpd(0.95, sigma = 2)
+#' qgpd(c(0.5, 0.9), u = c(0, 10))
+
+qgpd = function(p, sigma = 1, xi = 0, u = 0, lower.tail = TRUE, log.p = FALSE){
   
   # handle wrong data types as qnorm
   if (
@@ -164,13 +169,9 @@ qgpd = function(p, sigma, xi, u, lower.tail = TRUE, log.p = FALSE){
       !is.numeric(p),
       !is.numeric(sigma),
       !is.numeric(xi),
-      !is.numeric(u),
+      !is.numeric(u)
     )
   ) stop("Non-numeric argument to mathematical function")
-  
-  # handle values not allowed
-  ## p
-  #if (p > 1 || p < 0) stop("p must be between 0 and 1")
     
   # turn log(p) into p
   if (log.p) {
@@ -189,25 +190,60 @@ qgpd = function(p, sigma, xi, u, lower.tail = TRUE, log.p = FALSE){
   u = rep_len(u, max_n)
   
   # define the return vector
-  out <- numeric(n)
+  out <- numeric(max_n)
   
   # case xi = 0
-  mask = xi == 0 # boolean mask
+  mask = xi == 0 # boolean mask x = 0
   out[mask] = u[mask] - sigma[mask] * log(1 - p[mask])
   
   # case x != 0
-  mask = xi != 0
-  out[mask] = u[mask] + (sigma[mask] / xi[mask])((1 - p[mask])^(-xi[mask]) - 1)
+  mask = xi != 0 # boolean mask x != 0
+  out[mask] = u[mask] + (sigma[mask] / xi[mask]) * ((1 - p[mask])^(-xi[mask]) - 1)
+  
+  # force NaNs in computable but not allowed cases (as with qnorm and qunif)
+  mask = (
+    (p > 1 | p < 0) 
+    | (sigma < 0)
+  )# boolean mask for values not allowed
+  if (any(mask, na.rm = TRUE)) {
+    out[which(mask)] <- NaN
+    warning("NaNs produced")
+  }
+  
   
   return(out)
 }
+```
+
+```{r}
+# testing the function
+u = 1.5
+sigma = 2
+xi = -0.4
+p = c(0.5, 0.75, 0.99)
+
+qgpd(p, sigma, xi, u)
+```
+
+```{r}
+# incorrect data types test
+qgpd(p = "0.5")
+```
+
+```{r}
+# invalid inputs
+qgpd(p = -2, xi=1)
+```
+
+```{r}
+qgpd(p = 0.5, sigma = -4)
 ```
 
 ### Question 3
 
 *For this question, all R code should be displayed only within the appendix, not in the main report.*
 
-The file `gpd_samples.csv` contains six sets of random variates generated from different generalised Pareto distributions. The details of the generalised Pareto distributions used are summarised in `gpd_parameters.csv`. Unfortunately some of the parameter sets were recorded incorrectly.
+The file `gpd_samples.csv` contains six sets of random variates generated from different generalized Pareto distributions. The details of the generalized Pareto distributions used are summarized in `gpd_parameters.csv`. Unfortunately some of the parameter sets were recorded incorrectly.
 
 Within a single figure, construct a series of quantile-quantile plots to identify which datasets are inconsistent with their stated distributions. You should both justify your conclusions and describe your level of confidence in your findings.
 
@@ -284,4 +320,44 @@ Does your response:
 #| echo: true
 #| eval: false
 #| code-fold: true
+```
+
+```{r answer_3}
+
+gpd_samples = read.csv("gpd_samples.csv")
+gpd_parameters = read.csv("gpd_parameters.csv")
+
+```
+
+```{r}
+gpd_samples[gpd_samples$set_id == "a", ]
+```
+
+```{r}
+gpd_parameters
+```
+
+```{r}
+library(glue)
+
+u = gpd_parameters[gpd_parameters$id == "a",]$u
+sigma = gpd_parameters[gpd_parameters$id == "a",]$sigma
+xi = gpd_parameters[gpd_parameters$id == "a",]$xi
+
+X_obs = gpd_samples[gpd_samples$set_id == "a", ]$value
+X_obs = sort(X_obs)
+n = length(X_obs)
+
+p = seq(0, 1, length.out = n)
+X_theo = qgpd(p,sigma, xi, u)
+
+plot(
+  X_theo, 
+  X_obs,
+  pch=20,
+  main=glue("Q-Q Plot (sigma = {sigma}, xi = {xi}, u = {u})"),
+  xlab="Theoretical Values",
+  ylab="Observed Values"
+)
+abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2) 
 ```
